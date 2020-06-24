@@ -1,0 +1,10 @@
+UDB - microdatabse library.
+Microdatabase includes a single cyclical datasheet. Data records inside the datasheet are not sorted. But microdatabase includes also keys sheet which contain the indexes(order numbers) of datasheet records. Keys are sorted in ascending order of data values.
+
+Microdatabase includes functions for insert record, delete record. After record inserting or deleting  keys have being sorted by data increase order. 
+So, the acheivements of approach: 
+	1. The user can save a large data table and use a logarithmic (binary) search at any time because database is sorted (implicit sorting due to keys sorting).
+	2. Datasheet can be used as a cyclic buffer because real data order is not sorted, real data order is chronological
+	3. Datasheet can be situated into the slow memory segment, but sorting is fast because sort process involve only keysheet which situated inside fast RAM.	
+
+Keywords: logarithmic search algorithm, binary search algorithm, fast sorting, datasheet indexing, small database, micro database.
