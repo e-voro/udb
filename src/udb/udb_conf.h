@@ -1,8 +1,8 @@
 /*******************************************************************************
-  * @file           : gendtsh.cpp
-  * @brief          : Header for datasheet generator unit
+  * @file           : udb_conf.h
+  * @brief          : Header for Microdatabase library Configuration
   * @author         : Evgeny Voropaev, evoro@emmet.pro
-  * @creation date  : 24.06.2020
+  * @creation date  : 26.06.2020
   * @original proj. : torock.pro
   * @version 	    :1.0
   * @section License
@@ -27,13 +27,19 @@
   *****************************************************************************/
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __GENDTSH_H
-#define __GENDTSH_H
+#ifndef __UDB_CONF_H
+#define __UDB_CONF_H
 
-//#define RECQTTY 20
+#ifdef __cplusplus
+ extern "C" {
+#endif
 
-uint8_t GenerateDataSheet(uint32_t recs_qtty, uint32_t data_sz);
+#define UDB_DINAMICALLY_ALLOCATION_ENABLE
 
-#endif /* __GENDTSH_H */
+#ifdef __cplusplus
+ }
+#endif
 
-/************************ (C) COPYRIGHT Emmet for Torock *****END OF FILE****/
+#endif /* __UDB_CONF_H */
+
+/************************ (C) COPYRIGHT Emmet LLC for Torock Project *****END OF FILE****/

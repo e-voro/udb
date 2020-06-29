@@ -14,6 +14,7 @@
 
 #include <stdint.h>
 
+#define VAL_SZ 2U
 
 void udb_example_init(void);
 void udb_example_deinit(void);

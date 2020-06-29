@@ -46,20 +46,27 @@ int main(int argc, char **argv)
   {
 	if ( !strncmp(argv[i], "-gendtsh", 8) )
 	{
-		unsigned int shsz;
-		shsz = RECQTTY;
+		unsigned int recqtty;
+		uint8_t flagRecQtty=0;
+		//shsz = RECQTTY;
 		for (uint32_t j=0; j<argc; j++)
 		{
-			if ( !strncmp(argv[j], "-shsz=", 6) )
+			if ( !strncmp(argv[j], "-qtty=", 6) )
 			{
-				if ( sscanf(argv[j]+6,"%5u", &shsz) <= 0 )
+				if ( sscanf(argv[j]+6,"%5u", &recqtty) > 0 )
 				{
-					shsz=RECQTTY;
+					flagRecQtty = 1;
+					//shsz=RECQTTY;
 				}
 				break;
 			}
 		}
-		GenerateDataSheet(shsz, DATA_SZ);
+
+		if(!flagRecQtty) printf("-qtty is unknown");
+		else
+		{	printf("record quantity = %u", recqtty);
+			GenerateDataSheet(recqtty, VAL_SZ);
+		}
 	}
   }
 
