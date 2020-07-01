@@ -1,29 +1,25 @@
 /*******************************************************************************
   * @file           : udb.h
+  * @project name	: udb
+  * @version 		: udb-2.0
   * @brief          : Header for Microdatabase library
   * @author         : Evgeny Voropaev, evoro@emmet.pro
   * @creation date  : 24.06.2020
   * @original proj. : torock.pro
-  * @version 	    :1.0
+  * @date			: 01.07.2020
   * @section License
-  *
   * SPDX-License-Identifier: GPL-2.0-or-later
-  *
   * Copyright (C) 2020 Emmet, LLC. All rights reserved.
-  *
   * This program is free software; you can redistribute it and/or
   * modify it under the terms of the GNU General Public License
   * as published by the Free Software Foundation; either version 2
   * of the License, or (at your option) any later version.
-  *
   * This program is distributed in the hope that it will be useful,
   * but WITHOUT ANY WARRANTY; without even the implied warranty of
   * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   * GNU General Public License for more details.
-  *
   * You should have received a copy of the GNU General Public License
   * along with this program.
-  *
   *****************************************************************************/
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -35,7 +31,7 @@
 #endif
 
 #include <stdint.h>
-#include "os_port.h"
+#include "ev-port.h"
 #include "udb_conf.h"
 /*
  * keys - Array of keys - an array of sequence numbers of records
@@ -59,56 +55,68 @@
  * Record have size rec_sz.
  */
 
- /*
-#define REC(sh, n) \
-	( (uint8_t*) ( sh->recs + (uint32_t)n * (uint32_t)sh->rec_sz) )
-*/
+typedef uint16_t index_t;
+typedef int32_t windex_t;	//Widened index for exclude possibly index_t overflow
+							//during service operations
+typedef uint8_t rec_t;
 
 typedef struct
 {
-	OsMutex mu;
+	evMutex mu;
 	uint16_t qtty;
 	uint16_t max_qtty;
-	uint16_t rii; //next new record insert index;
+	index_t rii; //next new record insert index;
 	uint8_t val_be;//if data format is little-endian data_be =0
 	uint8_t val_sz;
 	uint8_t rec_sz;
-	uint16_t* keys;
-	uint16_t* antikeys;
+	index_t* keys;
+	index_t* antikeys;
 	uint8_t* rec_exst;
-	uint8_t* recs;
+	rec_t* recs;
 }Sheet_t;
 
-/*uint8_t sheet_init(Sheet_t* sh, uint16_t max_qtty,
-				uint8_t data_sz, uint8_t data_be,
-				uint16_t* keys_array, Rec_t* recs_array);*/
 #ifdef UDB_DINAMICALLY_ALLOCATION_ENABLE
 uint8_t udb_create( Sheet_t** ppsh,
-					uint16_t max_qtty,
-						uint8_t val_be,
-							uint8_t val_sz,
-								uint8_t rec_sz);
+						uint16_t max_qtty,
+							uint8_t val_be,
+								uint8_t val_sz,
+									uint8_t rec_sz);
 void udb_destroy( Sheet_t** ppsh);
 #endif
+
 uint8_t udb_init(Sheet_t* sh,
 					uint16_t max_qtty,
 						uint8_t val_be,
 							uint8_t val_sz,
 								uint8_t rec_sz,
-									uint16_t* keys,
-										uint16_t* antikeys,
+									index_t* keys,
+										index_t* antikeys,
 											uint8_t* rec_exst,
-												uint8_t* recs);
+												rec_t* recs);
+
 void udb_deinit(Sheet_t* sh);
 
 int8_t cmp_arr(uint8_t A[], uint8_t B[], uint16_t sz);
 
-uint8_t sheet_search_logar(Sheet_t* sh, uint8_t* srch_val,
-							int32_t* found_key_inx);
+bool_et udb_search_logar(Sheet_t* sh,
+							uint8_t* srch_val,
+								windex_t* found_key_inx);
 
-uint8_t sheet_addrec(Sheet_t* sh, uint8_t* newrec);
-uint8_t sheet_delrec(Sheet_t* sh, uint16_t rec_inx);
-uint8_t* getrec(Sheet_t* sh, uint16_t rec_inx);
+bool_et udb_select(Sheet_t* sh,
+						uint8_t* srch_val,
+							index_t* first_key_inx,
+								index_t* last_key_inx);
+
+uint8_t udb_insert_record(Sheet_t* sh, rec_t* newrec);
+uint8_t udb_delete_record(Sheet_t* sh, index_t rec_inx);
+rec_t* udb_get_record(Sheet_t* sh, index_t rec_inx);
+
+//Short function names
+#define getrec 	udb_get_record
+#define insrec 	udb_insert_record
+#define delrec 	udb_delete_record
+#define search	udb_search_logar
+#define sel 	udb_select
 
 #ifdef __cplusplus
  }

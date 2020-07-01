@@ -1,10 +1,10 @@
 /*******************************************************************************
-  * @file           : udb_conf.h
-  * @project name	: udb
-  * @version 		: udb-2.0
-  * @brief          : Header for Microdatabase library Configuration
+  * @file           : ev-port-config.h
+  * @project name	: ev-utils
+  * @version 		: ev-utils 1.2
+  * @brief          : Configuration of ev-port
   * @author         : Evgeny Voropaev, evoro@emmet.pro
-  * @creation date  : 26.06.2020
+  * @creation date  : 29.06.2020
   * @original proj. : torock.pro
   * @section License
   * SPDX-License-Identifier: GPL-2.0-or-later
@@ -22,19 +22,20 @@
   *****************************************************************************/
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __UDB_CONF_H
-#define __UDB_CONF_H
+#ifndef __EV_PORT_CONFIG_H
+#define __EV_PORT_CONFIG_H
 
 #ifdef __cplusplus
  extern "C" {
 #endif
 
-#define UDB_DINAMICALLY_ALLOCATION_ENABLE
+//Select underlying RTOS
+#define USE_FREERTOS
 
 #ifdef __cplusplus
  }
 #endif
 
-#endif /* __UDB_CONF_H */
+#endif /*__EV_PORT_CONFIG_H */
 
 /************************ (C) COPYRIGHT Emmet LLC for Torock Project *****END OF FILE****/

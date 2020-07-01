@@ -1,3 +1,11 @@
+/*******************************************************************************
+  * @file           : udb_example.c
+  * @project name	: udb
+  * @version 		: udb-2.0
+  * @brief          : Example for Microdatabase udb-2.0
+  * @author         : Evgeny Voropaev
+  *****************************************************************************/
+
 #define __UDB_C
 
 #include "udb.h"
@@ -10,8 +18,6 @@
 #define DATA_BE 1
 
 Sheet_t* pSh;
-//uint16_t K[MAXRECQTTY];
-//Rec_t* R;
 
 uint8_t udb_example_cachedb(const char* fname, Sheet_t* sh);
 void PrintSheet(Sheet_t* sh);
@@ -19,8 +25,6 @@ void PrintSheet(Sheet_t* sh);
 void udb_example_init(void)
 {
 	uint32_t Rec_t_size;
-	//R = malloc( sizeof(Rec_t) * MAXRECQTTY);
-	//sheet_init(&tag_sheet, MAXRECQTTY, DATA_SZ, DATA_BE, K, R);
 	pSh = 0;
 	udb_create(&pSh, MAXRECQTTY, DATA_BE, VAL_SZ, VAL_SZ);
 	printf("udo_example_init");
@@ -28,8 +32,7 @@ void udb_example_init(void)
 
 void udb_example_deinit(void)
 {
-	//if(R) free(R);
-	printf("udo_example_deinit");
+	printf("udb_example_deinit");
 }
 
 uint8_t udb_example_sort(const char* fname)
@@ -66,8 +69,6 @@ uint8_t udb_example_cachedb(const char* fname, Sheet_t* sh)
 		}
 		printf("udb_example_cachedb: recs_qtty=%d!\n", recs_qtty);
 
-		//Rec_t* newrec;
-		//newrec = malloc(sizeof(Rec_t) + DATA_SZ);
 		uint8_t* NewRec;
 		NewRec = malloc( sh->rec_sz );
 
@@ -82,8 +83,7 @@ uint8_t udb_example_cachedb(const char* fname, Sheet_t* sh)
 			res = 1;
 			uint32_t rec_inx_from_file;
 			scanned = fscanf(f, "%x,", &rec_inx_from_file);
-			//if (!scanned) { res = 0; break; }
-			//sh->keys[key_inx] = rec_inx;
+			if (!scanned) { res = 0; break; }
 
 			for (uint32_t i=0; i<sh->rec_sz; i++)
 			{
@@ -93,7 +93,7 @@ uint8_t udb_example_cachedb(const char* fname, Sheet_t* sh)
 			  if (!scanned) { res = 0; break; }
 			}
 			if (!res) break;
-			sheet_addrec(sh,NewRec);
+			insrec(sh,NewRec);
 		}
 		if (NewRec) free(NewRec);
 	  if(!res) break;
@@ -146,9 +146,7 @@ void PrintSheet(Sheet_t* sh)
 		printf(
 			"       %u / %u | %u * %u /\\ 0x",
 			(unsigned int) i,
-			//(unsigned int) sh->recs[i].key_inx,
 			(unsigned int) sh->antikeys[i],
-			//(unsigned int) sh->keys[ sh->recs[i].key_inx ],
 			(unsigned int) sh->keys[ sh->antikeys[i] ],
 			(unsigned int) sh->rec_exst[i] );
 		for (uint32_t DD = 0; DD < sh->rec_sz; DD++)
@@ -163,13 +161,39 @@ void PrintSheet(Sheet_t* sh)
 		printf(
 			"       %u / %u | %u * %u /\\ 0x",
 			(unsigned int) i,
-			//(unsigned int) sh->recs[sh->keys[i]].key_inx,
 			(unsigned int) sh->antikeys[sh->keys[i]],
 			(unsigned int) sh->keys[i],
-			//(unsigned int) sh->recs[i].Existed );
 			(unsigned int) sh->rec_exst[sh->keys[i]] );
 		for (uint32_t DD = 0; DD < sh->rec_sz; DD++)
 			printf("%02X", *(pRR+DD) );
 		printf("\n");
 	}
+}
+
+uint8_t udb_example_search_group(const char* fname, uint8_t* search_val, uint8_t val_sz )
+{
+	if(!fname) return 0;
+	udb_example_init();
+	udb_example_cachedb(fname, pSh);
+	index_t first_keyinx_of_grp, last_keyinx_of_grp;
+
+	if ( sel(pSh,search_val,&first_keyinx_of_grp, &last_keyinx_of_grp) )
+	{
+		printf("Value 0x");
+		for (uint8_t i = 0; i<val_sz; i++)
+			printf("%02X", (unsigned int)search_val[i]);
+		printf(" is found.");
+		printf("first_keyinx_of_grp=%u, last_keyinx_of_grp=%u.\n",
+				(unsigned int)first_keyinx_of_grp, (unsigned int)last_keyinx_of_grp);
+	}
+	else
+	{
+		printf("Value 0x");
+		for (uint8_t i = 0; i<val_sz; i++)
+			printf("%02X", (unsigned int)search_val[i]);
+		printf(" is not found.\n");
+	}
+
+	udb_example_deinit();
+	return 1;
 }

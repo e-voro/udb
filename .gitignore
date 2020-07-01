@@ -1,6 +1,6 @@
 
 .bld/
-.exe/
+#.exe/
 .settings/
 .cproject
 .project

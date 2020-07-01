@@ -1,10 +1,12 @@
 /*******************************************************************************
   * @file           : udb.c
+  * @project name	: udb
+  * @version 		: udb-2.0
   * @brief          : Microdatabase library
   * @author         : Evgeny Voropaev, evoro@emmet.pro
   * @creation date  : 24.06.2020
   * @original proj. : torock.pro
-  * @version 	    :1.0
+  * @date			: 01.07.2020
   * @section License
   *
   * SPDX-License-Identifier: GPL-2.0-or-later
@@ -33,22 +35,28 @@
 #include <stdlib.h>
 #include <string.h>
 
-uint8_t sheet_addkey(Sheet_t* sh, uint16_t rec_inx,
-						uint16_t* new_key_inx);
+//short function names
+#define addkey	udb_addkey
+#define delkey	udb_delkey
 
-uint8_t sheet_delkey(Sheet_t* sh, uint16_t key_inx);
+uint8_t udb_addkey(Sheet_t* sh,
+						index_t rec_inx,
+							index_t* new_key_inx);
+
+uint8_t udb_delkey(Sheet_t* sh, index_t key_inx);
 
 #ifdef UDB_DINAMICALLY_ALLOCATION_ENABLE
+
 uint8_t udb_create( Sheet_t** ppsh,
-					uint16_t max_qtty,
-						uint8_t val_be,
-							uint8_t val_sz,
-								uint8_t rec_sz)
+						uint16_t max_qtty,
+							uint8_t val_be,
+								uint8_t val_sz,
+									uint8_t rec_sz)
 {	uint8_t res;
-	uint16_t* keys;
-	uint16_t* antikeys;
+	index_t* keys;
+	index_t* antikeys;
 	uint8_t* rec_exst;
-	uint8_t* recs;
+	rec_t* recs;
 
 	do
 	{
@@ -75,12 +83,12 @@ uint8_t udb_create( Sheet_t** ppsh,
 void udb_destroy( Sheet_t** ppsh)
 {
 	if ( *ppsh )
-	{	osAcquireMutex( &(**ppsh).mu);
+	{	evTakeMutex( &(**ppsh).mu, evMAXDELAY);
 		if ( (**ppsh).keys) 	free( (**ppsh).keys );
 		if ( (**ppsh).antikeys) free( (**ppsh).antikeys );
 		if ( (**ppsh).recs) 	free( (**ppsh).recs );
 		if ( (**ppsh).rec_exst)  free( (**ppsh).rec_exst );
-		osReleaseMutex(&(**ppsh).mu);
+		evReleaseMutex(&(**ppsh).mu);
 
 		udb_deinit(*ppsh);
 		free(*ppsh);
@@ -95,15 +103,15 @@ uint8_t udb_init(Sheet_t* sh,
 						uint8_t val_be,
 							uint8_t val_sz,
 								uint8_t rec_sz,
-									uint16_t* keys,
-										uint16_t* antikeys,
+									index_t* keys,
+										index_t* antikeys,
 											uint8_t* rec_exst,
-												uint8_t* recs)
+												rec_t* recs)
 {	uint8_t res=0;
 	do
 	{ if (!sh) { res=0; break; }
 	  memset( sh, 0, sizeof(Sheet_t) );
-	  if ( !osCreateMutex(&sh->mu) ) {res = 0; break;}
+	  if ( !evCreateMutex(&sh->mu) ) {res = 0; break;}
 	  sh->qtty = 0;
 	  sh->max_qtty = max_qtty;
 	  sh->rii = 0;
@@ -133,27 +141,28 @@ uint8_t udb_init(Sheet_t* sh,
 void udb_deinit(Sheet_t* sh)
 {
 	if(!sh) return;
-	osDeleteMutex(&sh->mu);
+	evDeleteMutex(&sh->mu);
 }
 
-uint8_t sheet_addrec(Sheet_t* sh, uint8_t* newrec)
+uint8_t udb_insert_record(Sheet_t* sh, rec_t* newrec)
 {
 	uint8_t rslt=0;
 	uint16_t new_key_inx=0;
 	if(!sh) {	return 0;	}
-	osAcquireMutex(&sh->mu);
+	evTakeMutex(&sh->mu, evMAXDELAY);
+
 	do{//body
 		if( sh->rec_exst[sh->rii] !=0 )
 		{
-			sheet_delrec(sh, sh->rii);
+			delrec(sh, sh->rii);
 		}
 
 		uint8_t* pRR = getrec(sh, sh->rii);
 		for(uint16_t i=0; i < sh->rec_sz; i++)
 			*( pRR + i) = newrec[i];
-		if (sheet_addkey(sh, sh->rii, &new_key_inx) )
-		{	sh->rec_exst[sh->rii] = 1;//sh->recs[sh->rii].Existed = 1;
-			sh->antikeys[sh->rii] = new_key_inx;//sh->recs[sh->rii].key_inx = new_key_inx;
+		if (addkey(sh, sh->rii, &new_key_inx) )
+		{	sh->rec_exst[sh->rii] = 1;
+			sh->antikeys[sh->rii] = new_key_inx;
 			sh->qtty++;
 			rslt = 1;
 			if (sh->rii >= sh->max_qtty - 1)
@@ -161,42 +170,43 @@ uint8_t sheet_addrec(Sheet_t* sh, uint8_t* newrec)
 			else { 	sh->rii++;	}
 		}
 		else
-		{	sh->rec_exst[sh->rii] = 0;//sh->recs[sh->rii].Existed = 0;
+		{	sh->rec_exst[sh->rii] = 0;
 			rslt = 0;
 		}
 	}while(0);//body
-	osReleaseMutex(&sh->mu);
+	evReleaseMutex(&sh->mu);
 	return rslt;
 }
 
-uint8_t sheet_delrec(Sheet_t* sh, uint16_t rec_inx)
+uint8_t udb_delete_record(Sheet_t* sh, index_t rec_inx)
 {
-	sheet_delkey(sh, sh->antikeys[rec_inx]);
-	sh->rec_exst[rec_inx] = 0;//sh->recs[rec_inx].Existed = 0;
+	delkey(sh, sh->antikeys[rec_inx]);
+	sh->rec_exst[rec_inx] = 0;
 	if (sh->qtty) sh->qtty--;
 	return 1;
 }
 
-uint8_t* getrec(Sheet_t* sh, uint16_t rec_inx)
+rec_t* udb_get_record(Sheet_t* sh, index_t rec_inx)
 {
 	if (!sh) return 0;
-	return (uint8_t*) ( (unsigned int)sh->recs +
+	return (rec_t*) ( (unsigned int)sh->recs +
 						(unsigned int)rec_inx * (unsigned int)sh->rec_sz) ;
 }
 
-uint8_t sheet_delkey(Sheet_t* sh, uint16_t key_inx)
+uint8_t udb_delkey(Sheet_t* sh, index_t key_inx)
 {	for (uint16_t i = key_inx; i < sh->qtty; i++)
 	{	sh->keys[i] = sh->keys[i+1];
-		sh->antikeys[sh->keys[i]] = i;//sh->recs[sh->keys[i]].key_inx = i;
+		sh->antikeys[sh->keys[i]] = i;
 	}
 	return 1;
 }
 
-uint8_t sheet_addkey(Sheet_t* sh, uint16_t rec_inx,
-						uint16_t* new_key_inx)
+uint8_t udb_addkey(Sheet_t* sh,
+						index_t rec_inx,
+							index_t* new_key_inx)
 {
-	int32_t insert_key_index;
-	sheet_search_logar(sh, getrec(sh, rec_inx), &insert_key_index);
+	windex_t insert_key_index;
+	search(sh, getrec(sh, rec_inx), &insert_key_index);
 
 	for (uint16_t i = sh->qtty; i > insert_key_index; i--)
 	{
@@ -204,16 +214,23 @@ uint8_t sheet_addkey(Sheet_t* sh, uint16_t rec_inx,
 		sh->antikeys[sh->keys[i]] = i;
 	}
 
-	sh->keys[insert_key_index] = rec_inx;
-
-	*new_key_inx = (uint16_t)insert_key_index;
-	return 1;
+	if (insert_key_index < sh->max_qtty-1)
+	{
+		sh->keys[insert_key_index] = rec_inx;
+		*new_key_inx = (index_t)insert_key_index;
+		return 1;
+	}
+	else //insert_key_index >= sh->max_qtty-1
+	{
+		return 0;
+	}
 }
 
-uint8_t sheet_search_logar(Sheet_t* sh, uint8_t* srch_val,
-							int32_t* found_key_inx)
+bool_et udb_search_logar(Sheet_t* sh,
+							uint8_t* srch_val,
+								windex_t* found_key_inx)
 {
-   int32_t first, last, middle, n;
+   windex_t first, last, middle, n;
 
    n = sh->qtty;
    if (n<1)
@@ -260,6 +277,58 @@ uint8_t sheet_search_logar(Sheet_t* sh, uint8_t* srch_val,
       return 0;
    }
    else return 1;
+}
+
+bool_et udb_select(Sheet_t* sh,
+						uint8_t* srch_val,
+							index_t* first_key_inx,
+								index_t* last_key_inx)
+{
+	bool_et res;
+	windex_t found_key_inx;
+	int8_t cmp_res;
+	index_t FF, LL;
+	windex_t tmp;
+	evTakeMutex(&sh->mu, evMAXDELAY);
+	do {
+		if ( search(sh, srch_val, &found_key_inx) )
+		{
+			if ( found_key_inx >= sh->max_qtty  || found_key_inx < 0)
+			{	res = 0;  break;
+			}
+			//Search for group beginning
+			FF = found_key_inx;
+			cmp_res = 0;//found value equal to srch_val
+			tmp = FF;
+			while( !cmp_res && tmp>=0  )
+			{ 	cmp_res = cmp_arr( getrec(sh, sh->keys[tmp]), srch_val, sh->val_sz );
+				if (!cmp_res)
+					FF = (index_t)tmp;
+				tmp--;
+			}
+			*first_key_inx = FF;
+
+			//Search for group ending
+			cmp_res = 0;
+			LL = found_key_inx;
+			tmp = LL;
+			while( !cmp_res && tmp<sh->qtty  )
+			{ 	cmp_res = cmp_arr( getrec(sh, sh->keys[tmp]), srch_val, sh->val_sz );
+				if (!cmp_res)
+					LL = (index_t)tmp;
+				tmp++;
+			}
+			*last_key_inx = LL;
+			res = 1;
+		}
+		else
+		{
+			res = 0;
+		}
+	}while(0);
+	evReleaseMutex(&sh->mu);
+
+	return res;
 }
 
 int8_t cmp_arr(uint8_t A[], uint8_t B[], uint16_t sz)
