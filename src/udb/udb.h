@@ -1,7 +1,7 @@
 /*******************************************************************************
   * @file           : udb.h
   * @project name	: udb
-  * @version 		: udb-2.1
+  * @version 		: udb-2.3
   * @brief          : Header for Microdatabase library
   * @author         : Evgeny Voropaev, evoro@emmet.pro
   * @edition date  	: 02.07.2020
@@ -56,9 +56,9 @@
  */
 
 typedef uint16_t index_t;
-typedef int32_t windex_t;	//Widened index for exclude possibly index_t overflow
+typedef int32_t  windex_t;	//Widened index for exclude possibly index_t overflow
 							//during service operations
-typedef uint8_t rec_t;
+typedef uint8_t  rec_t;
 
 typedef struct
 {

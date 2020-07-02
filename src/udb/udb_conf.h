@@ -1,7 +1,7 @@
 /*******************************************************************************
   * @file           : udb_conf.h
   * @project name	: udb
-  * @version 		: udb-2.1
+  * @version 		: udb-2.3
   * @brief          : Header for Microdatabase library Configuration
   * @author         : Evgeny Voropaev, evoro@emmet.pro
   * @edition date  	: 02.07.2020
@@ -30,7 +30,7 @@
  extern "C" {
 #endif
 
-#define UDB_DINAMICALLY_ALLOCATION_ENABLE
+//#define UDB_DINAMICALLY_ALLOCATION_ENABLE
 
 #ifdef __cplusplus
  }

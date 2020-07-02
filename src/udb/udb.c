@@ -1,7 +1,7 @@
 /*******************************************************************************
   * @file           : udb.c
   * @project name	: udb
-  * @version 		: udb-2.1
+  * @version 		: udb-2.3
   * @brief          : Microdatabase library
   * @author         : Evgeny Voropaev, evoro@emmet.pro
   * @edition date  	: 02.07.2020
@@ -208,7 +208,7 @@ uint8_t udb_addkey(Sheet_t* sh,
 		sh->antikeys[sh->keys[i]] = i;
 	}
 
-	if (insert_key_index < sh->max_qtty-1)
+	if (insert_key_index < sh->max_qtty)
 	{
 		sh->keys[insert_key_index] = rec_inx;
 		*new_key_inx = (index_t)insert_key_index;
