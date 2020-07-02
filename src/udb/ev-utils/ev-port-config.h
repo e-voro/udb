@@ -30,7 +30,7 @@
 #endif
 
 //Select underlying RTOS
-#define USE_FREERTOS
+//#define USE_FREERTOS
 
 #ifdef __cplusplus
  }

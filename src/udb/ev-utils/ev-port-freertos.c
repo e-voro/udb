@@ -54,7 +54,7 @@ bool_et evCreateMutex(evMutex *mutex)
  * @brief Delete a mutex object
  * @param[in] mutex Pointer to the mutex object
  **/
-void evDeleteMutex(OsMutex *mutex)
+void evDeleteMutex(evMutex *mutex)
 {
    //Make sure the handle is valid
    if(mutex->handle != NULL)

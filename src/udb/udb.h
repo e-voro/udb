@@ -1,12 +1,12 @@
 /*******************************************************************************
   * @file           : udb.h
   * @project name	: udb
-  * @version 		: udb-2.0
+  * @version 		: udb-2.1
   * @brief          : Header for Microdatabase library
   * @author         : Evgeny Voropaev, evoro@emmet.pro
+  * @edition date  	: 02.07.2020
   * @creation date  : 24.06.2020
   * @original proj. : torock.pro
-  * @date			: 01.07.2020
   * @section License
   * SPDX-License-Identifier: GPL-2.0-or-later
   * Copyright (C) 2020 Emmet, LLC. All rights reserved.
@@ -94,9 +94,9 @@ uint8_t udb_init(Sheet_t* sh,
 											uint8_t* rec_exst,
 												rec_t* recs);
 
-void udb_deinit(Sheet_t* sh);
+void 	udb_deinit(Sheet_t* sh);
 
-int8_t cmp_arr(uint8_t A[], uint8_t B[], uint16_t sz);
+int8_t 	cmp_arr(uint8_t A[], uint8_t B[], uint16_t sz);
 
 bool_et udb_search_logar(Sheet_t* sh,
 							uint8_t* srch_val,
@@ -109,14 +109,18 @@ bool_et udb_select(Sheet_t* sh,
 
 uint8_t udb_insert_record(Sheet_t* sh, rec_t* newrec);
 uint8_t udb_delete_record(Sheet_t* sh, index_t rec_inx);
-rec_t* udb_get_record(Sheet_t* sh, index_t rec_inx);
+rec_t* 	udb_get_record(Sheet_t* sh, index_t rec_inx);
 
 //Short function names
-#define getrec 	udb_get_record
-#define insrec 	udb_insert_record
-#define delrec 	udb_delete_record
+#define getrec(pSheet, Record_index)	udb_get_record(pSheet, Record_index)
+#define insrec(pSheet, pNewRecord)		udb_insert_record(pSheet, pNewRecord)
+#define delrec(pSheet, Record_index) 	udb_delete_record(pSheet, Record_index)
 #define search	udb_search_logar
-#define sel 	udb_select
+#define sel( pSheet, pSearch_value, pFirst_key_inx, pLast_key_inx ) 	udb_select( pSheet, pSearch_value, pFirst_key_inx, pLast_key_inx )
+
+//Endian type of values
+#define DATA_LE 0
+#define DATA_BE 1
 
 #ifdef __cplusplus
  }

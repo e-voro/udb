@@ -1,31 +1,25 @@
 /*******************************************************************************
   * @file           : udb.c
   * @project name	: udb
-  * @version 		: udb-2.0
+  * @version 		: udb-2.1
   * @brief          : Microdatabase library
   * @author         : Evgeny Voropaev, evoro@emmet.pro
+  * @edition date  	: 02.07.2020
   * @creation date  : 24.06.2020
   * @original proj. : torock.pro
-  * @date			: 01.07.2020
   * @section License
-  *
   * SPDX-License-Identifier: GPL-2.0-or-later
-  *
   * Copyright (C) 2020 Emmet, LLC. All rights reserved.
-  *
   * This program is free software; you can redistribute it and/or
   * modify it under the terms of the GNU General Public License
   * as published by the Free Software Foundation; either version 2
   * of the License, or (at your option) any later version.
-  *
   * This program is distributed in the hope that it will be useful,
   * but WITHOUT ANY WARRANTY; without even the implied warranty of
   * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   * GNU General Public License for more details.
-  *
   * You should have received a copy of the GNU General Public License
   * along with this program.
-  *
   *****************************************************************************/
 
 #define __UDB_C
@@ -62,10 +56,10 @@ uint8_t udb_create( Sheet_t** ppsh,
 	{
 	  *ppsh = malloc( sizeof(Sheet_t) );
 	  if (!*ppsh) { res=0; break; }
-	  keys 	   = malloc( sizeof( (**ppsh).keys)	   * max_qtty);
-	  antikeys = malloc( sizeof( (**ppsh).antikeys ) * max_qtty);
-	  rec_exst = malloc( sizeof( (**ppsh).rec_exst)   * max_qtty);
-	  recs	   = malloc( sizeof( (**ppsh).recs) * rec_sz * max_qtty);
+	  keys 	   = malloc( max_qtty * sizeof( (**ppsh).keys[0]	 ) );
+	  antikeys = malloc( max_qtty * sizeof( (**ppsh).antikeys[0] ) );
+	  rec_exst = malloc( max_qtty * sizeof( (**ppsh).rec_exst[0] ) );
+	  recs	   = malloc( max_qtty * rec_sz );
 	  if( 	!keys 		||	!antikeys 	||
 	  		!rec_exst	||	!recs
 	  	)
@@ -87,7 +81,7 @@ void udb_destroy( Sheet_t** ppsh)
 		if ( (**ppsh).keys) 	free( (**ppsh).keys );
 		if ( (**ppsh).antikeys) free( (**ppsh).antikeys );
 		if ( (**ppsh).recs) 	free( (**ppsh).recs );
-		if ( (**ppsh).rec_exst)  free( (**ppsh).rec_exst );
+		if ( (**ppsh).rec_exst) free( (**ppsh).rec_exst );
 		evReleaseMutex(&(**ppsh).mu);
 
 		udb_deinit(*ppsh);
@@ -128,10 +122,10 @@ uint8_t udb_init(Sheet_t* sh,
 	  		!sh->recs
 	  	)
 	  	{	res=0; break; }
-	  memset( sh->keys, 0, max_qtty * sizeof( sh->keys));
-	  memset( sh->antikeys, 0, max_qtty * sizeof( sh->antikeys));
-	  memset( sh->rec_exst, 0, max_qtty * sizeof( sh->rec_exst));
-	  memset( sh->recs,0, sizeof( sh->rec_exst) * rec_sz * max_qtty );
+	  memset( sh->keys, 	0, max_qtty * sizeof( sh->keys[0]	  ) );
+	  memset( sh->antikeys, 0, max_qtty * sizeof( sh->antikeys[0] ) );
+	  memset( sh->rec_exst, 0, max_qtty * sizeof( sh->rec_exst[0] ) );
+	  memset( sh->recs,		0, max_qtty * rec_sz);
 	  res = 1;
 	}while(0);
 	if (!res) { udb_deinit(sh); }
@@ -165,9 +159,7 @@ uint8_t udb_insert_record(Sheet_t* sh, rec_t* newrec)
 			sh->antikeys[sh->rii] = new_key_inx;
 			sh->qtty++;
 			rslt = 1;
-			if (sh->rii >= sh->max_qtty - 1)
-			{	sh->rii = 0;	}
-			else { 	sh->rii++;	}
+			sh->rii = ( sh->rii + 1 ) % sh->max_qtty;
 		}
 		else
 		{	sh->rec_exst[sh->rii] = 0;
@@ -180,9 +172,11 @@ uint8_t udb_insert_record(Sheet_t* sh, rec_t* newrec)
 
 uint8_t udb_delete_record(Sheet_t* sh, index_t rec_inx)
 {
+	evTakeMutex(&sh->mu, evMAXDELAY);
 	delkey(sh, sh->antikeys[rec_inx]);
 	sh->rec_exst[rec_inx] = 0;
 	if (sh->qtty) sh->qtty--;
+	evReleaseMutex(&sh->mu);
 	return 1;
 }
 
@@ -239,6 +233,7 @@ bool_et udb_search_logar(Sheet_t* sh,
 	   return 0;
    }
 
+ evTakeMutex(&sh->mu, evMAXDELAY);
    first = 0;
    last = n - 1;
    middle = (first+last)/2;
@@ -257,7 +252,7 @@ bool_et udb_search_logar(Sheet_t* sh,
 	   //else if (array[middle] == search)
 	   else if (cmp_res == 0)
 	   {
-         printf("search is present at index %d.\n", middle);
+         printf("search is present at index %d.\n", (int)middle);
          *found_key_inx = middle;
          break;
 	   }
@@ -269,8 +264,9 @@ bool_et udb_search_logar(Sheet_t* sh,
 
 	   middle = (first + last)/2;
    }
+ evReleaseMutex(&sh->mu);
 
-   printf("founded_key_inx=%d\n", *found_key_inx);
+   printf("founded_key_inx=%d\n", (int)*found_key_inx);
 
    if (first > last)
    {  printf("Not found! SEARCH is not present in the list.\n");
@@ -331,6 +327,9 @@ bool_et udb_select(Sheet_t* sh,
 	return res;
 }
 
+//Implemented big-endian data value comparison
+//TODO: Implement the little-endian data value comparison.
+//Use DATA_LE, DATA_BE macros and Sheet_t.data_be field
 int8_t cmp_arr(uint8_t A[], uint8_t B[], uint16_t sz)
 {	uint16_t i = 0;
 	for (; i<sz; i++)

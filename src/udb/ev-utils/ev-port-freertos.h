@@ -67,7 +67,7 @@ bool_et evTakeMutex(evMutex *mutex, tick_et delay);
 void evReleaseMutex(evMutex *mutex);
 
 //System time
-systime_t evGetSystemTime(void);
+systime_et evGetSystemTime(void);
 
 //C++ guard
 #ifdef __cplusplus

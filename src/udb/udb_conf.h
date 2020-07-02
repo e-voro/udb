@@ -1,9 +1,10 @@
 /*******************************************************************************
   * @file           : udb_conf.h
   * @project name	: udb
-  * @version 		: udb-2.0
+  * @version 		: udb-2.1
   * @brief          : Header for Microdatabase library Configuration
   * @author         : Evgeny Voropaev, evoro@emmet.pro
+  * @edition date  	: 02.07.2020
   * @creation date  : 26.06.2020
   * @original proj. : torock.pro
   * @section License
